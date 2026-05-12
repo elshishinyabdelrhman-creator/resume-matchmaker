@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 import { signUpWithPassword, type AuthFormState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,14 @@ export function SignupForm({ nextParam, loginHref }: SignupFormProps) {
       <input type="hidden" name="next" value={nextParam ?? ""} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="fullName">Full name</Label>
-        <Input id="fullName" name="fullName" autoComplete="name" required className="h-11" />
+        <Input
+          id="fullName"
+          name="fullName"
+          autoComplete="name"
+          required
+          placeholder="Jane Doe"
+          className="h-11"
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
@@ -33,6 +41,7 @@ export function SignupForm({ nextParam, loginHref }: SignupFormProps) {
           type="email"
           autoComplete="email"
           required
+          placeholder="you@example.com"
           className="h-11"
         />
       </div>
@@ -45,6 +54,7 @@ export function SignupForm({ nextParam, loginHref }: SignupFormProps) {
           autoComplete="new-password"
           required
           minLength={8}
+          placeholder="At least 8 characters"
           className="h-11"
         />
       </div>
@@ -53,12 +63,19 @@ export function SignupForm({ nextParam, loginHref }: SignupFormProps) {
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" className="h-11 w-full" disabled={pending}>
-        {pending ? "Creating account…" : "Create account"}
+      <Button type="submit" className="h-11 w-full gap-2" size="lg" disabled={pending}>
+        {pending ? (
+          <>
+            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+            Creating account…
+          </>
+        ) : (
+          "Sign up"
+        )}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href={loginHref} className="text-foreground underline-offset-4 hover:underline">
+        <Link href={loginHref} className="text-primary underline-offset-4 hover:underline">
           Sign in
         </Link>
       </p>

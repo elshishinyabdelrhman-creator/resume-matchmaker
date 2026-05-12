@@ -9,7 +9,7 @@ export function GoogleSignInForm({ nextParam }: GoogleSignInFormProps) {
   return (
     <form action={signInWithGoogle} className="w-full">
       <input type="hidden" name="next" value={nextParam ?? ""} />
-      <Button type="submit" variant="outline" className="h-11 w-full gap-2">
+      <Button type="submit" variant="outline" className="h-12 w-full gap-2" size="lg">
         <GoogleGlyph />
         Continue with Google
       </Button>
