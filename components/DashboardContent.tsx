@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import dynamic from 'next/dynamic';
 import { useRef, useState } from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { ArrowRight, Download, Loader2, Upload } from "lucide-react";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { Download, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { extractTextFromPDFAction } from "@/app/actions";
 import { optimizeResume } from '@/app/actions/optimize-resume';
+import { TailoredResumePDF } from '@/components/TailoredResumePDF';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,11 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-
-const TailoredResumePDF = dynamic(
-  () => import('@/components/TailoredResumePDF').then((mod) => mod.TailoredResumePDF),
-  { ssr: false },
-);
 
 /** UI state for the results tab (maps `keywordGaps` from the action to `gaps`). */
 type TailorResultView = {
@@ -301,70 +295,21 @@ export default function DashboardContent() {
           </TabsContent>
 
           <TabsContent value="results">
-            {result ? (
-              <div className="grid gap-8 lg:grid-cols-2">
+            {result && (
+              <div className="mx-auto max-w-4xl">
                 <Card className="border-zinc-800 bg-zinc-900">
                   <CardHeader>
-                    <CardTitle className="text-red-400">Original resume</CardTitle>
-                  </CardHeader>
-                  <CardContent className="max-h-[700px] overflow-auto">
-                    <pre className="whitespace-pre-wrap text-sm">{resumeText}</pre>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-zinc-800 bg-zinc-900">
-                  <CardHeader>
-                    <CardTitle className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-emerald-400">AI tailored resume</span>
+                    <CardTitle className="flex justify-between">
+                      <span className="text-emerald-400">✅ Tailored Resume</span>
                       <span className="font-mono text-2xl">Score: {result.atsScore}%</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="max-h-[520px] overflow-auto">
-                    <pre className="whitespace-pre-wrap text-sm">{result.tailoredResume}</pre>
-                  </CardContent>
+                  <CardContent className="space-y-6">
+                    <div className="prose prose-invert max-h-[600px] overflow-auto rounded border border-zinc-800 bg-zinc-950 p-6">
+                      <pre className="whitespace-pre-wrap text-sm">{result.tailoredResume}</pre>
+                    </div>
 
-                  {(result.strengths.length > 0 || result.improvements.length > 0 || result.gaps.length > 0) && (
-                    <CardContent className="space-y-4 border-t border-zinc-800 pt-4">
-                      {result.strengths.length > 0 ? (
-                        <div>
-                          <h4 className="mb-2 text-sm font-semibold text-emerald-400">Strengths</h4>
-                          <ul className="space-y-1 text-sm text-zinc-400">
-                            {result.strengths.map((s, i) => (
-                              <li key={i}>• {s}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {result.improvements.length > 0 ? (
-                        <div>
-                          <h4 className="mb-2 text-sm font-semibold text-amber-400">Suggestions</h4>
-                          <ul className="space-y-1 text-sm text-zinc-400">
-                            {result.improvements.map((s, i) => (
-                              <li key={i}>• {s}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {result.gaps.length > 0 ? (
-                        <div>
-                          <h4 className="mb-2 text-sm font-semibold text-red-400">Missing keywords</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {result.gaps.map((gap, i) => (
-                              <span
-                                key={i}
-                                className="rounded-md bg-red-950/80 px-2 py-1 text-xs text-red-300"
-                              >
-                                {gap}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  )}
-
-                  <div className="flex flex-col gap-3 border-t border-zinc-800 p-6">
-                    <div className="flex gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       <PDFDownloadLink
                         document={
                           <TailoredResumePDF
@@ -374,50 +319,50 @@ export default function DashboardContent() {
                           />
                         }
                         fileName={`${pdfFileBase}-tailored-resume.pdf`}
-                        className="flex-1"
+                        className="min-w-0 flex-1 sm:min-w-[140px]"
                       >
                         {({ loading }) => (
-                          <Button type="button" className="w-full" disabled={loading}>
-                            <Download className="mr-2 size-4" aria-hidden />
+                          <Button type="button" className="w-full py-6" disabled={loading}>
+                            <Download className="mr-2 size-4 shrink-0" aria-hidden />
                             {loading ? "Generating PDF…" : "Download PDF"}
                           </Button>
                         )}
                       </PDFDownloadLink>
 
-                      <Button variant="outline" className="flex-1 border-zinc-600 bg-transparent" asChild>
-                        <Link href="/applications/board">
-                          Open applications board
-                          <ArrowRight className="ml-2 size-4" aria-hidden />
-                        </Link>
+                      <Button
+                        type="button"
+                        className="flex-1 py-6"
+                        onClick={() => {
+                          const blob = new Blob([result.tailoredResume], {
+                            type: "text/markdown",
+                          });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${company.trim() || pdfFileBase || "job"}-tailored-resume.md`;
+                          a.style.display = "none";
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        }}
+                      >
+                        📥 Download as Markdown
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 border-zinc-600 py-6"
+                        onClick={() => window.location.reload()}
+                      >
+                        New Application
                       </Button>
                     </div>
-
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const element = document.createElement("a");
-                        element.setAttribute(
-                          "href",
-                          "data:text/markdown;charset=utf-8," +
-                            encodeURIComponent(result.tailoredResume),
-                        );
-                        element.setAttribute(
-                          "download",
-                          `${company.trim() || "job"}-tailored-resume.md`,
-                        );
-                        element.style.display = "none";
-                        document.body.appendChild(element);
-                        element.click();
-                        document.body.removeChild(element);
-                      }}
-                      className="w-full py-6"
-                    >
-                      📥 Download Tailored Resume (Markdown)
-                    </Button>
-                  </div>
+                  </CardContent>
                 </Card>
               </div>
-            ) : null}
+            )}
           </TabsContent>
         </Tabs>
       </div>
