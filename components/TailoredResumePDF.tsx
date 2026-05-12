@@ -1,25 +1,13 @@
-"use client";
+'use client';
 
 import { convert } from "html-to-text";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  PDFDownloadLink,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 11,
-    fontFamily: "Helvetica",
-    lineHeight: 1.6,
-  },
+  page: { padding: 40, fontSize: 11, fontFamily: "Helvetica" },
   header: {
     marginBottom: 20,
     borderBottomWidth: 1,
@@ -27,43 +15,16 @@ const styles = StyleSheet.create({
     borderBottomStyle: "solid",
     paddingBottom: 10,
   },
-  name: {
-    fontSize: 24,
-    fontFamily: "Helvetica-Bold",
-  },
-  title: {
-    fontSize: 14,
-    color: "#555555",
-    marginBottom: 4,
-    fontFamily: "Helvetica",
-  },
-  section: {
-    marginBottom: 15,
-  },
+  name: { fontSize: 24, fontFamily: "Helvetica-Bold" },
+  title: { fontSize: 14, color: "#555555", fontFamily: "Helvetica" },
+  section: { marginBottom: 15 },
   sectionTitle: {
     fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 6,
+    marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  bullet: {
-    marginLeft: 10,
-    marginBottom: 4,
-    fontFamily: "Helvetica",
   },
 });
-
-const SECTIONS_PER_PAGE = 12;
-
-function chunkSections<T>(arr: T[], size: number): T[][] {
-  if (arr.length === 0) return [[]];
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    out.push(arr.slice(i, i + size));
-  }
-  return out;
-}
 
 export type ResumePDFProps = {
   resumeMarkdown: string;
@@ -99,48 +60,33 @@ export function TailoredResumePDF({
   title,
 }: ResumePDFProps) {
   const normalized = normalizeResumeBody(resumeMarkdown);
-  const sections = normalized.split(/\n\n+/).filter(Boolean);
-  const pages = chunkSections(sections, SECTIONS_PER_PAGE);
+  const blocks = normalized.split(/\n\n+/).filter(Boolean);
 
   return (
     <Document title={`${name} — Resume`} author="Resume Matchmaker" language="en">
-      {pages.map((pageSections, pageIndex) => (
-        <Page key={pageIndex} size="A4" style={styles.page}>
-          {pageIndex === 0 ? (
-            <View style={styles.header}>
-              <Text style={styles.name}>{name}</Text>
-              {title ? <Text style={styles.title}>{title}</Text> : null}
-            </View>
-          ) : null}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{name}</Text>
+          {title ? <Text style={styles.title}>{title}</Text> : null}
+        </View>
 
-          {pageSections.length === 0 ? (
-            <Text style={styles.bullet}> </Text>
-          ) : (
-            pageSections.map((section, index) => {
-              const lines = section.split("\n").filter((l) => l.length > 0);
-              const rawHeading = lines[0] ?? "";
-              const heading = rawHeading.replace(/^#+\s*/, "").trim() || "Section";
-              const bodyLines = lines.slice(1);
-
-              return (
-                <View key={`${pageIndex}-${index}`} style={styles.section}>
-                  <Text style={styles.sectionTitle}>{heading}</Text>
-                  {bodyLines.map((line, i) => {
-                    const trimmed = line.replace(/^[-*]\s+/, "");
-                    const isBullet = /^[-*]\s+/.test(line);
-                    return (
-                      <Text key={i} style={styles.bullet}>
-                        {isBullet ? "• " : ""}
-                        {trimmed}
-                      </Text>
-                    );
-                  })}
-                </View>
-              );
-            })
-          )}
-        </Page>
-      ))}
+        {blocks.length === 0 ? (
+          <Text>No resume content to render.</Text>
+        ) : (
+          blocks.map((section, i) => {
+            const lines = section.split("\n");
+            const heading =
+              (lines[0] ?? "").replace(/#/g, "").trim() || "Section";
+            const body = lines.slice(1).join("\n");
+            return (
+              <View key={`section-${i}`} style={styles.section}>
+                <Text style={styles.sectionTitle}>{heading}</Text>
+                <Text>{body}</Text>
+              </View>
+            );
+          })
+        )}
+      </Page>
     </Document>
   );
 }

@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 import { useRef, useState } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { ArrowRight, Download, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  extractTextFromPDFAction,
-  optimizeResume,
-} from "@/app/actions";
+import { extractTextFromPDFAction } from "@/app/actions";
+import { optimizeResume } from '@/app/actions/optimize-resume';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,8 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const TailoredResumePDF = dynamic(
-  () =>
-    import("@/components/TailoredResumePDF").then((mod) => mod.TailoredResumePDF),
+  () => import('@/components/TailoredResumePDF').then((mod) => mod.TailoredResumePDF),
   { ssr: false },
 );
 
@@ -366,31 +363,56 @@ export default function DashboardContent() {
                     </CardContent>
                   )}
 
-                  <div className="flex gap-3 border-t border-zinc-800 p-6">
-                    <PDFDownloadLink
-                      document={
-                        <TailoredResumePDF
-                          resumeMarkdown={result.tailoredResume}
-                          name="Your Name"
-                          title={jobTitle.trim() || undefined}
-                        />
-                      }
-                      fileName={`${pdfFileBase}-tailored-resume.pdf`}
-                      className="flex-1"
-                    >
-                      {({ loading }) => (
-                        <Button type="button" className="w-full" disabled={loading}>
-                          <Download className="mr-2 size-4" aria-hidden />
-                          {loading ? "Generating PDF…" : "Download PDF"}
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
+                  <div className="flex flex-col gap-3 border-t border-zinc-800 p-6">
+                    <div className="flex gap-3">
+                      <PDFDownloadLink
+                        document={
+                          <TailoredResumePDF
+                            resumeMarkdown={result.tailoredResume}
+                            name="Your Name"
+                            title={jobTitle.trim() || undefined}
+                          />
+                        }
+                        fileName={`${pdfFileBase}-tailored-resume.pdf`}
+                        className="flex-1"
+                      >
+                        {({ loading }) => (
+                          <Button type="button" className="w-full" disabled={loading}>
+                            <Download className="mr-2 size-4" aria-hidden />
+                            {loading ? "Generating PDF…" : "Download PDF"}
+                          </Button>
+                        )}
+                      </PDFDownloadLink>
 
-                    <Button variant="outline" className="flex-1 border-zinc-600 bg-transparent" asChild>
-                      <Link href="/applications/board">
-                        Open applications board
-                        <ArrowRight className="ml-2 size-4" aria-hidden />
-                      </Link>
+                      <Button variant="outline" className="flex-1 border-zinc-600 bg-transparent" asChild>
+                        <Link href="/applications/board">
+                          Open applications board
+                          <ArrowRight className="ml-2 size-4" aria-hidden />
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const element = document.createElement("a");
+                        element.setAttribute(
+                          "href",
+                          "data:text/markdown;charset=utf-8," +
+                            encodeURIComponent(result.tailoredResume),
+                        );
+                        element.setAttribute(
+                          "download",
+                          `${company.trim() || "job"}-tailored-resume.md`,
+                        );
+                        element.style.display = "none";
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                      }}
+                      className="w-full py-6"
+                    >
+                      📥 Download Tailored Resume (Markdown)
                     </Button>
                   </div>
                 </Card>
