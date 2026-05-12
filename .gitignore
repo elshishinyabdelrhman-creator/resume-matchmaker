@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Stale path after app moved to repo root (delete locally if empty)
+/resume-matchmaker/
+
 # production
 /build
 
