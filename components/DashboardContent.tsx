@@ -304,50 +304,38 @@ export default function DashboardContent() {
           <div className="mx-auto max-w-4xl">
             <Card className="border-zinc-800 bg-zinc-900">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>✅ Tailored Resume Ready</span>
-                  <span className="font-mono text-2xl text-emerald-400">
-                    {result.atsScore}%
+                <CardTitle className="flex justify-between">
+                  <span>Tailored Resume</span>
+                  <span className="text-emerald-400">
+                    ATS Score: {result.atsScore}%
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="max-h-[600px] overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 p-6">
-                  <pre className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {result.tailoredResume}
-                  </pre>
+                <div className="max-h-[600px] overflow-auto rounded-xl border border-zinc-800 bg-zinc-950 p-8 font-mono text-sm whitespace-pre-wrap">
+                  {result.tailoredResume}
                 </div>
 
-                <div className="mt-6 flex gap-4">
-                  <Button
-                    type="button"
-                    className="flex-1 py-6 text-lg"
-                    onClick={() => {
-                      const blob = new Blob([result.tailoredResume], {
-                        type: "text/markdown",
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${company.trim() || "resume"}-tailored.md`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    }}
-                  >
-                    📥 Download Markdown
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 py-6 text-lg"
-                    onClick={() => window.location.reload()}
-                  >
-                    Start New Application
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  className="mt-6 w-full py-6 text-lg"
+                  onClick={() => {
+                    const blob = new Blob([result.tailoredResume], {
+                      type: "text/plain",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${company.trim() || "resume"}-tailored-resume.txt`;
+                    a.style.display = "none";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  📥 Download Resume
+                </Button>
               </CardContent>
             </Card>
           </div>
