@@ -11,26 +11,21 @@ export type OptimizeResumeResult = {
   improvements: string[];
 };
 
-function field(formData: FormData, key: string): string {
-  const v = formData.get(key);
-  return typeof v === "string" ? v : "";
-}
-
 export async function optimizeResume(
   formData: FormData,
 ): Promise<OptimizeResumeResult> {
   try {
-    const resumeText = field(formData, "resumeText");
-    const company = field(formData, "company");
-    const jobTitle = field(formData, "jobTitle");
-    const jobDescription = field(formData, "jobDescription");
+    const resumeText = formData.get("resumeText") as string;
+    const company = formData.get("company") as string;
+    const jobTitle = formData.get("jobTitle") as string;
+    const jobDescription = formData.get("jobDescription") as string;
 
-    if (!resumeText.trim() || resumeText.trim().length < 50) {
-      throw new Error("Resume text is too short");
+    if (!resumeText || resumeText.trim().length < 50) {
+      throw new Error("Resume text is too short. Please paste your resume.");
     }
-    if (!company.trim()) throw new Error("Company is required");
-    if (!jobTitle.trim()) throw new Error("Job title is required");
-    if (!jobDescription.trim()) throw new Error("Job description is required");
+    if (!company?.trim()) throw new Error("Company name is required");
+    if (!jobTitle?.trim()) throw new Error("Job title is required");
+    if (!jobDescription?.trim()) throw new Error("Job description is required");
 
     const optimized = await tailorResume(
       resumeText.trim(),
@@ -43,14 +38,16 @@ export async function optimizeResume(
       success: true,
       tailoredResume: optimized.tailoredResume,
       atsScore: optimized.atsScore,
-      keywordGaps: optimized.keywordGaps ?? [],
-      strengths: optimized.strengths ?? [],
-      improvements: optimized.improvements ?? [],
+      keywordGaps: optimized.keywordGaps || [],
+      strengths: optimized.strengths || [],
+      improvements: optimized.improvements || [],
     };
   } catch (error: unknown) {
-    console.error("Action Error:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to optimize resume";
-    throw new Error(message);
+    console.error("Server Action Error:", error);
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Failed to generate tailored resume",
+    );
   }
 }
