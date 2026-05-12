@@ -9,7 +9,8 @@ export async function listApplications(userId: string) {
     .order("updated_at", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("listApplications:", error.message);
+    return [];
   }
 
   return data ?? [];
@@ -25,7 +26,8 @@ export async function getApplication(userId: string, id: string) {
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("getApplication:", error.message);
+    return null;
   }
 
   return data;

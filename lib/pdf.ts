@@ -2,19 +2,33 @@
  * Server-side PDF text extraction via pdf.js (text layer).
  * `pdfjs-dist` is listed in `next.config` `serverExternalPackages`.
  *
- * Worker URL must match the installed `pdfjs-dist` version (a fixed CDN like 4.0.379 will
- * break against v5). We resolve `build/pdf.worker.mjs` from the package on disk.
+ * Worker setup is lazy: resolving `pdf.worker.mjs` at module load can throw in some
+ * serverless bundles (breaking unrelated RSC trees). We configure on first parse, with a CDN fallback.
  */
 import * as pdfjsLib from "pdfjs-dist";
+import { version as pdfjsVersion } from "pdfjs-dist";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const require = createRequire(import.meta.url);
-const pdfjsPackageDir = path.dirname(require.resolve("pdfjs-dist/package.json"));
-pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
-  path.join(pdfjsPackageDir, "build", "pdf.worker.mjs"),
-).href;
+let workerConfigured = false;
+
+function configurePdfWorker(): void {
+  if (workerConfigured) {
+    return;
+  }
+  workerConfigured = true;
+  try {
+    const require = createRequire(import.meta.url);
+    const pdfjsPackageDir = path.dirname(require.resolve("pdfjs-dist/package.json"));
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+      path.join(pdfjsPackageDir, "build", "pdf.worker.mjs"),
+    ).href;
+  } catch (e) {
+    console.warn("pdfjs worker: local resolve failed, using unpkg fallback:", e);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`;
+  }
+}
 
 function normalizeExtractedText(raw: string): string {
   return raw
@@ -24,6 +38,8 @@ function normalizeExtractedText(raw: string): string {
 }
 
 async function extractTextFromSource(data: ArrayBuffer | Uint8Array): Promise<string> {
+  configurePdfWorker();
+
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
   const loadingTask = pdfjsLib.getDocument({
     data: bytes,

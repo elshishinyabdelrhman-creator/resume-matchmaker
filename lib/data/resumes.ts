@@ -9,7 +9,8 @@ export async function listResumes(userId: string) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("listResumes:", error.message);
+    return [];
   }
 
   return data ?? [];
