@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { ArrowRight, Download, Loader2, Upload } from "lucide-react";
@@ -9,9 +10,7 @@ import { toast } from "sonner";
 import {
   extractTextFromPDFAction,
   optimizeResume,
-  type OptimizeResumeResult,
 } from "@/app/actions";
-import { TailoredResumePDF } from "@/components/TailoredResumePDF";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type SuccessResult = Extract<OptimizeResumeResult, { success: true }>;
+const TailoredResumePDF = dynamic(
+  () =>
+    import("@/components/TailoredResumePDF").then((mod) => mod.TailoredResumePDF),
+  { ssr: false },
+);
+
+/** UI state for the results tab (maps `keywordGaps` from the action to `gaps`). */
+type TailorResultView = {
+  tailoredResume: string;
+  atsScore: number;
+  gaps: string[];
+  strengths: string[];
+  improvements: string[];
+};
 
 export default function DashboardContent() {
   const [resumeText, setResumeText] = useState("");
@@ -31,7 +43,7 @@ export default function DashboardContent() {
   const [parsingPdf, setParsingPdf] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [result, setResult] = useState<SuccessResult | null>(null);
+  const [result, setResult] = useState<TailorResultView | null>(null);
   const [activeTab, setActiveTab] = useState("input");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -132,11 +144,13 @@ export default function DashboardContent() {
 
     try {
       const data = await optimizeResume(formData);
-      if (!data.success) {
-        toast.error(data.error);
-        return;
-      }
-      setResult(data);
+      setResult({
+        tailoredResume: data.tailoredResume,
+        atsScore: data.atsScore,
+        gaps: data.keywordGaps,
+        strengths: data.strengths,
+        improvements: data.improvements,
+      });
       setActiveTab("results");
       toast.success(`✅ Tailored successfully! ATS Score: ${data.atsScore}%`);
     } catch (error: unknown) {
@@ -373,8 +387,8 @@ export default function DashboardContent() {
                     </PDFDownloadLink>
 
                     <Button variant="outline" className="flex-1 border-zinc-600 bg-transparent" asChild>
-                      <Link href={`/applications/${result.application.id}`}>
-                        Save &amp; track application
+                      <Link href="/applications/board">
+                        Open applications board
                         <ArrowRight className="ml-2 size-4" aria-hidden />
                       </Link>
                     </Button>
