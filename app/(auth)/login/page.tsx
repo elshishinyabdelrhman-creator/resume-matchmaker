@@ -15,6 +15,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const oauthError =
     params.error === "oauth" || params.error === "oauth_config" ? params.error : null;
+  const authCallbackError = params.error === "auth" ? true : false;
 
   return (
     <Suspense
@@ -22,7 +23,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
         <p className="text-center text-sm text-muted-foreground">Loading sign-in…</p>
       }
     >
-      <Login oauthError={oauthError} />
+      <Login authCallbackError={authCallbackError} oauthError={oauthError} />
     </Suspense>
   );
 }

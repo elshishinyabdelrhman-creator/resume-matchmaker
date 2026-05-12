@@ -16,10 +16,10 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    console.error("Auth callback exchangeCodeForSession:", error);
     return NextResponse.redirect(new URL("/login?error=auth", origin).toString());
   }
 
-  // Refresh cookie-backed session after code exchange (harmless if already synced).
   await supabase.auth.getSession();
 
   return NextResponse.redirect(new URL(next, origin).toString());

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -14,15 +14,18 @@ import { Label } from "@/components/ui/label";
 
 type LoginPageClientProps = {
   oauthError?: "oauth" | "oauth_config" | null;
+  authCallbackError?: boolean;
 };
 
-export default function Login({ oauthError }: LoginPageClientProps) {
+export default function Login({ oauthError, authCallbackError }: LoginPageClientProps) {
   const searchParams = useSearchParams();
   const nextRaw = searchParams.get("next");
   const dest = safeNextPath(nextRaw, "/");
   const signupHref = nextRaw
     ? `/signup?next=${encodeURIComponent(nextRaw)}`
     : "/signup";
+
+  const supabase = useMemo(() => createClient(), []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +38,6 @@ export default function Login({ oauthError }: LoginPageClientProps) {
     }
 
     setLoading(true);
-    const supabase = createClient();
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -54,7 +56,6 @@ export default function Login({ oauthError }: LoginPageClientProps) {
   };
 
   const handleGoogle = async () => {
-    const supabase = createClient();
     const callback = new URL("/auth/callback", window.location.origin);
     callback.searchParams.set("next", dest);
 
@@ -71,9 +72,15 @@ export default function Login({ oauthError }: LoginPageClientProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Resume Matchmaker</h1>
         <p className="text-sm text-muted-foreground">Sign in to continue.</p>
       </div>
+
+      {authCallbackError ? (
+        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
+          Sign-in could not be completed. Try again or use email and password.
+        </p>
+      ) : null}
 
       {oauthError === "oauth" || oauthError === "oauth_config" ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">
@@ -83,8 +90,8 @@ export default function Login({ oauthError }: LoginPageClientProps) {
         </p>
       ) : null}
 
-      <Button type="button" onClick={handleGoogle} className="h-11 w-full" variant="outline">
-        Continue with Google
+      <Button type="button" onClick={() => void handleGoogle()} className="h-12 w-full" variant="outline" size="lg">
+        Sign in with Google
       </Button>
 
       <div className="relative">
