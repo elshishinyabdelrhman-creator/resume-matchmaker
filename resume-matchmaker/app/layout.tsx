@@ -40,18 +40,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-svh flex flex-col bg-background font-sans text-foreground antialiased">
+      <body className="min-h-svh bg-background font-sans text-foreground antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          <main className="flex flex-1 flex-col">{children}</main>
-          <Toaster richColors closeButton position="top-center" />
+          {children}
+          <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>
     </html>
