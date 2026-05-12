@@ -169,7 +169,7 @@ function ResumeUploadInner({
               </p>
             ) : (
               <p className="pointer-events-none text-xs text-muted-foreground">
-                We extract text with pdf-parse & mammoth, then structure with AI when configured.
+                We extract text with pdf.js & mammoth, then structure with AI when configured.
               </p>
             )}
           </label>

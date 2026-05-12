@@ -16,8 +16,8 @@ export function AppShell({ userEmail, children }: AppShellProps) {
   return (
     <div className="flex min-h-svh flex-1 flex-col bg-background md:flex-row">
       <AppSidebarNav />
-      <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <AppSidebar userEmail={userEmail} />
+      <div className="flex min-w-0 flex-1 flex-col md:ml-64">
         <header className="flex items-center justify-between gap-3 border-b border-border/80 bg-background/90 px-4 py-3 backdrop-blur sm:px-6">
           <p className="truncate text-sm text-muted-foreground">{userEmail}</p>
           <div className="flex shrink-0 items-center gap-2">

@@ -7,7 +7,7 @@ export type ExtractPdfTextResult =
   | { ok: false; error: string };
 
 /**
- * Parse PDF text on the server (Buffer + pdf-parse). Call from client via FormData with `file`.
+ * Parse PDF text on the server (pdf.js text layer). Call from client via FormData with `file`.
  */
 export async function extractTextFromPDFAction(
   formData: FormData,
@@ -25,10 +25,12 @@ export async function extractTextFromPDFAction(
 
   try {
     const text = await extractTextFromPDF(file);
-    if (!text.trim()) {
+    const trimmed = text.trim();
+    if (!trimmed || trimmed.length < 50) {
       return {
         ok: false,
-        error: "No text found in this PDF. Try pasting your resume manually.",
+        error:
+          "Could not extract text from this PDF. Try copying and pasting manually.",
       };
     }
     return { ok: true, text };

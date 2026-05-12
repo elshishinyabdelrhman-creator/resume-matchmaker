@@ -43,47 +43,58 @@ export default function DashboardContent() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "tailored";
 
-  const processPdfFile = async (file: File) => {
+  const uploadResumePdf = async (file: File) => {
     const isPdf =
       file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
-      toast.error("Please upload a PDF file");
+      toast.error("Please upload a PDF file only");
       return;
     }
 
     setFileName(file.name);
     setParsingPdf(true);
+
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await extractTextFromPDFAction(formData);
-      if (!res.ok) {
-        toast.error(res.error);
+      const extracted = await extractTextFromPDFAction(formData);
+      if (!extracted.ok) {
+        toast.error(extracted.error);
+        setResumeText("");
         return;
       }
-      setResumeText(res.text);
-      toast.success("PDF parsed successfully");
+      setResumeText(extracted.text);
+      toast.success(
+        `✅ Extracted ${extracted.text.length} characters successfully!`,
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to read PDF";
+      toast.error(message);
+      setResumeText("");
     } finally {
       setParsingPdf(false);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    void processPdfFile(file);
-    e.target.value = "";
+    try {
+      await uploadResumePdf(file);
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) void processPdfFile(file);
+    if (file) void uploadResumePdf(file);
   };
 
   const handleOptimize = async () => {
-    // eslint-disable-next-line no-console -- debug aid for optimize flow
     console.log("Current values:", {
       resumeText: resumeText?.length,
       company,
@@ -91,13 +102,11 @@ export default function DashboardContent() {
       jobDescription: jobDescription?.length,
     });
 
-    const resume = resumeText?.trim() ?? "";
-    if (!resume || resume.length < 30) {
-      toast.error(
-        "Resume text is too short. Please upload PDF or paste your resume.",
-      );
+    if (!resumeText || resumeText.trim().length < 100) {
+      toast.error("Please paste your resume text (minimum 100 characters)");
       return;
     }
+    const resume = resumeText.trim();
     const companyTrimmed = company?.trim() ?? "";
     if (!companyTrimmed) {
       toast.error("Please enter the Company name");
@@ -160,16 +169,23 @@ export default function DashboardContent() {
           </TabsList>
 
           <TabsContent value="input">
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div className="mx-auto max-w-4xl">
               <Card className="border-zinc-800 bg-zinc-900">
                 <CardHeader>
                   <CardTitle>Application details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <Label>Upload resume PDF</Label>
-                    <button
-                      type="button"
+                    <Label>1. Upload Resume (PDF) - Optional</Label>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          fileInputRef.current?.click();
+                        }
+                      }}
                       onClick={() => fileInputRef.current?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -178,10 +194,8 @@ export default function DashboardContent() {
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={handleDrop}
                       className={cn(
-                        "mt-2 w-full cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-colors",
-                        isDragging
-                          ? "border-blue-500 bg-blue-500/5"
-                          : "border-zinc-700 hover:border-blue-500",
+                        "mt-2 cursor-pointer rounded-2xl border-2 border-dashed border-zinc-700 p-10 text-center transition hover:border-blue-500",
+                        isDragging && "border-blue-500 bg-blue-500/5",
                       )}
                     >
                       <input
@@ -192,13 +206,35 @@ export default function DashboardContent() {
                         onChange={handleFileUpload}
                       />
                       {parsingPdf ? (
-                        <Loader2 className="mx-auto mb-4 size-12 animate-spin text-zinc-500" />
+                        <Loader2
+                          className="mx-auto mb-3 size-12 animate-spin text-zinc-500"
+                          aria-hidden
+                        />
                       ) : (
-                        <Upload className="mx-auto mb-4 size-12 text-zinc-500" aria-hidden />
+                        <Upload className="mx-auto mb-3 size-12 text-zinc-500" aria-hidden />
                       )}
-                      <p className="font-medium">{fileName || "Drop your resume here"}</p>
-                      <p className="mt-1 text-sm text-zinc-500">Click or drag and drop</p>
-                    </button>
+                      <p className="font-medium">{fileName || "Click to upload PDF"}</p>
+                      <p className="text-sm text-zinc-500">
+                        We&apos;ll try to extract text automatically
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-lg font-medium">
+                      2. Paste your resume text here{" "}
+                      <span className="text-red-400">*</span>
+                    </Label>
+                    <Textarea
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      rows={16}
+                      className="mt-2 min-h-[300px] resize-y border-zinc-700 bg-zinc-950 font-mono text-sm"
+                      placeholder="Copy everything from your resume (Ctrl+A → Ctrl+C) and paste here..."
+                    />
+                    <p className="mt-2 text-xs text-zinc-500">
+                      💡 Tip: Open your resume → Select all (Ctrl+A) → Copy → Paste here
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -248,21 +284,6 @@ export default function DashboardContent() {
                       "✨ Generate Tailored Resume"
                     )}
                   </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-zinc-800 bg-zinc-900">
-                <CardHeader>
-                  <CardTitle>Original resume</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={resumeText}
-                    onChange={(e) => setResumeText(e.target.value)}
-                    rows={22}
-                    className="border-zinc-800 bg-zinc-950 font-mono text-sm"
-                    placeholder="Resume text will appear here after upload…"
-                  />
                 </CardContent>
               </Card>
             </div>
