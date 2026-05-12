@@ -21,8 +21,8 @@ const optionalResumeId = z
   });
 
 const formSchema = z.object({
-  resumeText: z.string().min(40).max(20_000),
-  jobDescription: z.string().min(40).max(40_000),
+  resumeText: z.string().min(30).max(20_000),
+  jobDescription: z.string().min(50).max(40_000),
   company: z.string().min(1).max(200),
   jobTitle: z
     .string()
@@ -60,7 +60,7 @@ export async function optimizeResume(formData: FormData): Promise<OptimizeResume
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { success: false, error: "Unauthorized" };
+    return { success: false, error: "You must be logged in to optimize resumes." };
   }
 
   const parsed = formSchema.safeParse({
@@ -72,7 +72,10 @@ export async function optimizeResume(formData: FormData): Promise<OptimizeResume
   });
 
   if (!parsed.success) {
-    return { success: false, error: "Missing or invalid fields." };
+    return {
+      success: false,
+      error: "Missing or invalid fields. Resume needs 30+ characters, job description 50+.",
+    };
   }
 
   const { resumeText, jobDescription, company, jobTitle, resumeId } = parsed.data;
@@ -82,6 +85,7 @@ export async function optimizeResume(formData: FormData): Promise<OptimizeResume
     optimized = await tailorResume(resumeText, jobDescription, company, jobTitle);
   } catch (e) {
     const message = e instanceof Error ? e.message : "AI request failed.";
+    console.error("optimizeResume tailorResume:", e);
     return { success: false, error: message };
   }
 
@@ -105,6 +109,7 @@ export async function optimizeResume(formData: FormData): Promise<OptimizeResume
       .single();
 
     if (resumeError || !resumeRow) {
+      console.error("optimizeResume resume insert:", resumeError);
       return { success: false, error: resumeError?.message ?? "Could not save resume." };
     }
 
@@ -134,6 +139,7 @@ export async function optimizeResume(formData: FormData): Promise<OptimizeResume
     .single();
 
   if (appError || !application) {
+    console.error("optimizeResume application insert:", appError);
     return { success: false, error: appError?.message ?? "Could not save application." };
   }
 

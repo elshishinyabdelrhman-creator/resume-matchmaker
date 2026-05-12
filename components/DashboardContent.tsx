@@ -83,17 +83,43 @@ export default function DashboardContent() {
   };
 
   const handleOptimize = async () => {
-    if (!resumeText.trim() || !jobDescription.trim() || !company.trim()) {
-      toast.error("Please fill all fields");
+    // eslint-disable-next-line no-console -- debug aid for optimize flow
+    console.log("Current values:", {
+      resumeText: resumeText?.length,
+      company,
+      jobTitle,
+      jobDescription: jobDescription?.length,
+    });
+
+    const resume = resumeText?.trim() ?? "";
+    if (!resume || resume.length < 30) {
+      toast.error(
+        "Resume text is too short. Please upload PDF or paste your resume.",
+      );
+      return;
+    }
+    const companyTrimmed = company?.trim() ?? "";
+    if (!companyTrimmed) {
+      toast.error("Please enter the Company name");
+      return;
+    }
+    const titleTrimmed = jobTitle?.trim() ?? "";
+    if (!titleTrimmed) {
+      toast.error("Please enter the Job Title");
+      return;
+    }
+    const jd = jobDescription?.trim() ?? "";
+    if (!jd || jd.length < 50) {
+      toast.error("Please paste the full Job Description");
       return;
     }
 
     setOptimizing(true);
     const formData = new FormData();
-    formData.append("resumeText", resumeText);
-    formData.append("company", company);
-    formData.append("jobTitle", jobTitle);
-    formData.append("jobDescription", jobDescription);
+    formData.append("resumeText", resume);
+    formData.append("company", companyTrimmed);
+    formData.append("jobTitle", titleTrimmed);
+    formData.append("jobDescription", jd);
 
     try {
       const data = await optimizeResume(formData);
@@ -103,16 +129,17 @@ export default function DashboardContent() {
       }
       setResult(data);
       setActiveTab("results");
-      toast.success(`Optimized! ATS score: ${data.atsScore}%`);
+      toast.success(`✅ Tailored successfully! ATS Score: ${data.atsScore}%`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Optimization failed";
+      const message =
+        error instanceof Error ? error.message : "Failed to optimize resume";
       toast.error(message);
     } finally {
       setOptimizing(false);
     }
   };
 
-  const busy = parsingPdf || optimizing;
+  const isLoading = optimizing;
 
   return (
     <div className="min-h-full rounded-2xl border border-border bg-zinc-950 p-6 text-zinc-100 sm:p-8">
@@ -200,8 +227,8 @@ export default function DashboardContent() {
                     <Textarea
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder="Paste the full job description..."
                       rows={14}
-                      placeholder="Paste the full job description…"
                       className="border-zinc-800 bg-zinc-950"
                     />
                   </div>
@@ -209,16 +236,16 @@ export default function DashboardContent() {
                   <Button
                     type="button"
                     onClick={() => void handleOptimize()}
-                    disabled={busy}
-                    className="w-full py-7 text-lg"
+                    disabled={isLoading}
+                    className="!bg-gradient-to-r !from-blue-600 !to-purple-600 w-full py-6 text-lg font-semibold !text-white shadow-lg hover:!from-blue-700 hover:!to-purple-700 disabled:!opacity-70"
                   >
-                    {optimizing ? (
+                    {isLoading ? (
                       <>
-                        AI is optimizing…
-                        <Loader2 className="ml-2 size-5 animate-spin" aria-hidden />
+                        AI is tailoring your resume...{" "}
+                        <Loader2 className="ml-2 h-5 w-5 animate-spin" aria-hidden />
                       </>
                     ) : (
-                      "✨ Generate tailored resume"
+                      "✨ Generate Tailored Resume"
                     )}
                   </Button>
                 </CardContent>
