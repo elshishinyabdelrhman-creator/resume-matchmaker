@@ -15,7 +15,8 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const oauthError =
     params.error === "oauth" || params.error === "oauth_config" ? params.error : null;
-  const authCallbackError = params.error === "auth" ? true : false;
+  const authCallbackError =
+    params.error === "auth" || params.error === "auth_failed" ? true : false;
 
   return (
     <Suspense
