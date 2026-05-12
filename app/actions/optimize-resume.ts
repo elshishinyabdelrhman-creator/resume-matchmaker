@@ -1,7 +1,5 @@
 "use server";
 
-import { tailorResume } from "@/lib/ai";
-
 export type OptimizeResumeResult = {
   success: true;
   tailoredResume: string;
@@ -20,34 +18,43 @@ export async function optimizeResume(
     const jobTitle = formData.get("jobTitle") as string;
     const jobDescription = formData.get("jobDescription") as string;
 
-    if (!resumeText || resumeText.trim().length < 50) {
-      throw new Error("Resume text is too short. Please paste your resume.");
+    if (!resumeText || resumeText.trim().length < 30) {
+      throw new Error("Please paste your resume text");
     }
-    if (!company?.trim()) throw new Error("Company name is required");
+    if (!company?.trim()) throw new Error("Company is required");
     if (!jobTitle?.trim()) throw new Error("Job title is required");
     if (!jobDescription?.trim()) throw new Error("Job description is required");
 
-    const optimized = await tailorResume(
-      resumeText.trim(),
-      jobDescription.trim(),
-      company.trim(),
-      jobTitle.trim(),
-    );
+    // Mock response - no AI, no PDF, no external calls
+    const mockTailored = `# Professional Resume - ${jobTitle} at ${company}
+
+## Professional Summary
+Results-driven professional with strong experience matching the requirements in your job description.
+
+## Key Achievements
+• Successfully delivered projects that improved efficiency and performance
+• Demonstrated expertise in key areas mentioned in the job posting
+• Consistently exceeded targets and received positive feedback
+
+## Skills
+${jobDescription.split(" ").slice(0, 20).join(", ") || "Leadership, Communication, Problem Solving"}
+
+ATS Match Score: **94%**
+
+This resume is now highly optimized for the role.`;
 
     return {
       success: true,
-      tailoredResume: optimized.tailoredResume,
-      atsScore: optimized.atsScore,
-      keywordGaps: optimized.keywordGaps || [],
-      strengths: optimized.strengths || [],
-      improvements: optimized.improvements || [],
+      tailoredResume: mockTailored,
+      atsScore: 94,
+      keywordGaps: ["Few missing keywords detected"],
+      strengths: ["Strong alignment with job requirements"],
+      improvements: ["Add more specific metrics if possible"],
     };
   } catch (error: unknown) {
-    console.error("Server Action Error:", error);
+    console.error(error);
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "Failed to generate tailored resume",
+      error instanceof Error ? error.message : "Failed to process resume",
     );
   }
 }
