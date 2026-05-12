@@ -1,18 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { Download, Loader2, Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { extractTextFromPDFAction } from "@/app/actions";
 import { optimizeResume } from '@/app/actions/optimize-resume';
-import { TailoredResumePDF } from '@/components/TailoredResumePDF';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -38,13 +35,6 @@ export default function DashboardContent() {
   const [activeTab, setActiveTab] = useState("input");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const pdfFileBase =
-    company
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "tailored";
 
   const uploadResumePdf = async (file: File) => {
     const isPdf =
@@ -163,17 +153,33 @@ export default function DashboardContent() {
           <p className="mt-2 text-zinc-400">AI that makes you the perfect candidate</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-8 grid w-full grid-cols-2 bg-zinc-900">
-            <TabsTrigger value="input" className="data-[state=active]:bg-zinc-800">
-              1. Input
-            </TabsTrigger>
-            <TabsTrigger value="results" disabled={!result} className="data-[state=active]:bg-zinc-800">
-              2. Results
-            </TabsTrigger>
-          </TabsList>
+        <div className="mb-8 flex border-b border-zinc-800">
+          <button
+            type="button"
+            onClick={() => setActiveTab("input")}
+            className={`border-b-2 px-6 py-3 font-medium transition-all ${
+              activeTab === "input"
+                ? "border-blue-500 text-white"
+                : "border-transparent text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            1. Input
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("results")}
+            disabled={!result}
+            className={`border-b-2 px-6 py-3 font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+              activeTab === "results"
+                ? "border-blue-500 text-white"
+                : "border-transparent text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            2. Results
+          </button>
+        </div>
 
-          <TabsContent value="input">
+        {activeTab === "input" ? (
             <div className="mx-auto max-w-4xl">
               <Card className="border-zinc-800 bg-zinc-900">
                 <CardHeader>
@@ -292,79 +298,60 @@ export default function DashboardContent() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+        ) : null}
 
-          <TabsContent value="results">
-            {result && (
-              <div className="mx-auto max-w-4xl">
-                <Card className="border-zinc-800 bg-zinc-900">
-                  <CardHeader>
-                    <CardTitle className="flex justify-between">
-                      <span className="text-emerald-400">✅ Tailored Resume</span>
-                      <span className="font-mono text-2xl">Score: {result.atsScore}%</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="prose prose-invert max-h-[600px] overflow-auto rounded border border-zinc-800 bg-zinc-950 p-6">
-                      <pre className="whitespace-pre-wrap text-sm">{result.tailoredResume}</pre>
-                    </div>
+        {activeTab === "results" && result ? (
+          <div className="mx-auto max-w-4xl">
+            <Card className="border-zinc-800 bg-zinc-900">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>✅ Tailored Resume Ready</span>
+                  <span className="font-mono text-2xl text-emerald-400">
+                    {result.atsScore}%
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-[600px] overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 p-6">
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed">
+                    {result.tailoredResume}
+                  </pre>
+                </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                      <PDFDownloadLink
-                        document={
-                          <TailoredResumePDF
-                            resumeMarkdown={result.tailoredResume}
-                            name="Your Name"
-                            title={jobTitle.trim() || undefined}
-                          />
-                        }
-                        fileName={`${pdfFileBase}-tailored-resume.pdf`}
-                        className="min-w-0 flex-1 sm:min-w-[140px]"
-                      >
-                        {({ loading }) => (
-                          <Button type="button" className="w-full py-6" disabled={loading}>
-                            <Download className="mr-2 size-4 shrink-0" aria-hidden />
-                            {loading ? "Generating PDF…" : "Download PDF"}
-                          </Button>
-                        )}
-                      </PDFDownloadLink>
+                <div className="mt-6 flex gap-4">
+                  <Button
+                    type="button"
+                    className="flex-1 py-6 text-lg"
+                    onClick={() => {
+                      const blob = new Blob([result.tailoredResume], {
+                        type: "text/markdown",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `${company.trim() || "resume"}-tailored.md`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    📥 Download Markdown
+                  </Button>
 
-                      <Button
-                        type="button"
-                        className="flex-1 py-6"
-                        onClick={() => {
-                          const blob = new Blob([result.tailoredResume], {
-                            type: "text/markdown",
-                          });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${company.trim() || pdfFileBase || "job"}-tailored-resume.md`;
-                          a.style.display = "none";
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        }}
-                      >
-                        📥 Download as Markdown
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 border-zinc-600 py-6"
-                        onClick={() => window.location.reload()}
-                      >
-                        New Application
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 py-6 text-lg"
+                    onClick={() => window.location.reload()}
+                  >
+                    Start New Application
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
       </div>
     </div>
   );
